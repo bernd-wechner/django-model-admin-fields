@@ -2,7 +2,9 @@
 Created on 8 Mar.,2018
 
 @author: Bernd Wechner
-@status: Beta - works and is in use on a dedicated project. 
+@status: Beta - works and is in use on a dedicated project.
+
+In your Dango settings.py make sure to include 'crequest.middleware.CrequestMiddleware' in the MIDDDLEWARE list.
 
 Provides a class, AdminModel which is an abstract Django model that a model can derive from to inherit
 some admin fields and a save override that keeps them up to date. Intended for recording some user and time
@@ -13,23 +15,22 @@ Specifically it adds to any model that derives from it 6 new fields:
     created_by
     created_on
     created_on_tz
-    
+
     last_edited_by
     last_edited_on
     last_edited_on_tz
 
 That is, the name of the user who created the object and who last saved (edited) it,
-and the time it was created and last saved (edited). Timezone fields are maintained 
+and the time it was created and last saved (edited). Timezone fields are maintained
 as well as a convenience for timezone aware sites.
 
 The timezone saved is the one active in Django at the time. Django has solid support
-for presenting times that make sense to users across the globe, by activating the 
+for presenting times that make sense to users across the globe, by activating the
 timezone a given user is in (provided the site asks for that and activates the
-timezone appropriately). 
+timezone appropriately).
 '''
 import pytz
 
-from django_currentuser.middleware import get_current_user
 from timezone_field import TimeZoneField
 
 from django.db import models
@@ -37,6 +38,8 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils.timezone import get_current_timezone
+
+from crequest.middleware import CrequestMiddleware
 
 UTC = pytz.timezone('UTC')
 
@@ -70,7 +73,8 @@ class AdminModel(models.Model):
         Update the CoGs admin fields on an object (whenever it is saved).
         '''
         now = timezone.now()
-        usr = get_current_user()
+        rqt = CrequestMiddleware.get_request()
+        usr = rqt.user
 
         if hasattr(self, "last_edited_by"):
             self.last_edited_by = usr
